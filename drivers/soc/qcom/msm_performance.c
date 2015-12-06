@@ -21,6 +21,8 @@
 
 #include <trace/events/power.h>
 
+static int touchboost = 1;
+
 static struct mutex managed_cpus_lock;
 
 /* Maximum number to clusters that this module will manage*/
@@ -47,6 +49,29 @@ static DEFINE_PER_CPU(struct cpu_status, cpu_stats);
 
 static unsigned int num_online_managed(struct cpumask *mask);
 static int init_cluster_control(void);
+
+static int set_touchboost(const char *buf, const struct kernel_param *kp)
+{
+	int val;
+
+	if (sscanf(buf, "%d\n", &val) != 1)
+		return -EINVAL;
+
+	touchboost = val;
+
+	return 0;
+}
+
+static int get_touchboost(char *buf, const struct kernel_param *kp)
+{
+	return snprintf(buf, PAGE_SIZE, "%d", touchboost);
+}
+
+static const struct kernel_param_ops param_ops_touchboost = {
+	.set = set_touchboost,
+	.get = get_touchboost,
+};
+device_param_cb(touchboost, &param_ops_touchboost, NULL, 0644);
 
 static int set_num_clusters(const char *buf, const struct kernel_param *kp)
 {
@@ -237,6 +262,9 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	struct cpufreq_policy policy;
 	cpumask_var_t limit_mask;
 	int ret;
+
+	if (!touchboost)
+		return 0;
 
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
