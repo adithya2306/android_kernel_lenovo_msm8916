@@ -202,6 +202,12 @@ struct msm_fb_backup_type {
 	struct mdp_display_commit disp_commit;
 };
 
+struct msm_fb_fps_info {
+	u32 frame_count;
+	ktime_t last_sampled_time_us;
+	u32 measured_fps;
+};
+
 struct msm_fb_data_type {
 	u32 key;
 	u32 index;
@@ -219,6 +225,7 @@ struct msm_fb_data_type {
 	struct fb_info *fbi;
 
 	int idle_time;
+	struct msm_fb_fps_info fps_info;
 	struct delayed_work idle_notify_work;
 
 	int op_enable;
@@ -357,6 +364,11 @@ static inline bool mdss_fb_is_hdmi_primary(struct msm_fb_data_type *mfd)
 		(mfd->panel_info->type == DTV_PANEL));
 }
 
+static inline void mdss_fb_init_fps_info(struct msm_fb_data_type *mfd)
+{
+	memset(&mfd->fps_info, 0, sizeof(mfd->fps_info));
+}
+
 int mdss_fb_get_phys_info(dma_addr_t *start, unsigned long *len, int fb_num);
 void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl);
 void mdss_fb_update_backlight(struct msm_fb_data_type *mfd);
@@ -371,4 +383,5 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 		     unsigned long arg);
 int mdss_fb_compat_ioctl(struct fb_info *info, unsigned int cmd,
 			 unsigned long arg);
+void mdss_fb_calc_fps(struct msm_fb_data_type *mfd);
 #endif /* MDSS_FB_H */
