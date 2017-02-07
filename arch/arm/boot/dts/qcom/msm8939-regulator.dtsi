@@ -212,26 +212,26 @@
 					<0   50000  0>,
 					<0   20000  0>;
 		qcom,cpr-quotient-adjustment =
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0   41  (-124)>, /* NOM + 20mv, TURBO - 60mv	*/
-					<0 (-20) (-124)>, /* NOM - 10mv, TURBO - 60mv	*/
-					<0  104  (-124)>, /* NOM + 50mv, TURBO - 60mv	*/
-					<0   41  (-124)>, /* NOM + 20mv, TURBO - 60mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0 (-20)  (-41)>, /* NOM - 10mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>, /* NOM + 20mv, TURBO - 20mv	*/
-					<0  104   (-41)>, /* NOM + 50mv, TURBO - 20mv	*/
-					<0   41   (-41)>; /* NOM + 20mv, TURBO - 20mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0   41  (-124)>, /* NOM + 10mv, TURBO - 80mv	*/
+					<0 (-20) (-124)>, /* NOM - 20mv, TURBO - 80mv	*/
+					<0  104  (-124)>, /* NOM + 30mv, TURBO - 80mv	*/
+					<0   41  (-124)>, /* NOM + 10mv, TURBO - 80mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0 (-20)  (-41)>, /* NOM - 20mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>, /* NOM + 10mv, TURBO - 30mv	*/
+					<0  104   (-41)>, /* NOM + 30mv, TURBO - 30mv	*/
+					<0   41   (-41)>; /* NOM + 10mv, TURBO - 30mv	*/
 		qcom,cpr-fuse-min-quot-diff = <0 0 40>;
 		qcom,cpr-min-quot-diff-adjustment =
 					<0 0 40>,
@@ -317,10 +317,10 @@
 			<0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0     0 0 0 0 0>,
 			<0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0     0 0 0 0 0>;
 		qcom,cpr-voltage-floor-override =
-			<0xffffffff 0xffffffff 1050000 1050000 1050000 1050000
-			1050000 1050000 1050000 1050000 1050000 1050000 1050000
-			1050000 1050000 1100000 1137500 1137500 1137500 1137500
-			1137500 1137500 1137500 1137500 1137500 1137500 1137500
+			<0xffffffff 0xffffffff 1030000 1030000 1030000 1030000
+			1030000 1030000 1030000 1030000 1030000 1030000 1030000
+			1030000 1050000 1065000 1070000 1075000 1085000 1085000
+			1095000 1095000 1110000 1137000 1137000 1137000 1137500
 			1137500 1137500 1137500>;
 		qcom,cpr-enable;
 	};
@@ -412,9 +412,9 @@
 	rpm-regulator-ldoa1 {
 		status = "okay";
 		pm8916_l1: regulator-l1 {
-			regulator-min-microvolt = <1225000>;
+			regulator-min-microvolt = <1205000>;
 			regulator-max-microvolt = <1225000>;
-			qcom,init-voltage = <1225000>;
+			qcom,init-voltage = <1205000>;
 			status = "okay";
 		};
 	};
@@ -422,9 +422,9 @@
 	rpm-regulator-ldoa2 {
 		status = "okay";
 		pm8916_l2: regulator-l2 {
-			regulator-min-microvolt = <1200000>;
+			regulator-min-microvolt = <1180000>;
 			regulator-max-microvolt = <1200000>;
-			qcom,init-voltage = <1200000>;
+			qcom,init-voltage = <1180000>;
 			status = "okay";
 		};
 	};
