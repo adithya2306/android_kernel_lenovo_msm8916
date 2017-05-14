@@ -2134,8 +2134,9 @@ static void monitor_soc_work(struct work_struct *work)
 	 */
 	if ((chip->last_soc != chip->calculated_soc) ||
 					chip->dt.cfg_use_voltage_soc)
-		schedule_delayed_work(&chip->monitor_soc_work,
-			msecs_to_jiffies(get_calculation_delay_ms(chip)));
+		queue_delayed_work(system_power_efficient_wq,
+					&chip->monitor_soc_work,
+					msecs_to_jiffies(get_calculation_delay_ms(chip)));
 
 	if (chip->reported_soc_in_use && chip->charger_removed_since_full
 				&& !chip->charger_reinserted) {
@@ -2325,7 +2326,8 @@ static int qpnp_vm_bms_power_set_property(struct power_supply *psy,
 		cancel_delayed_work_sync(&chip->monitor_soc_work);
 		chip->last_ocv_uv = val->intval;
 		pr_debug("OCV = %d\n", val->intval);
-		schedule_delayed_work(&chip->monitor_soc_work, 0);
+		queue_delayed_work(system_power_efficient_wq,
+					&chip->monitor_soc_work, 0);
 		break;
 	case POWER_SUPPLY_PROP_HI_POWER:
 		rc = qpnp_vm_bms_config_power_state(chip, val->intval, true);
@@ -3960,7 +3962,8 @@ static int qpnp_vm_bms_probe(struct spmi_device *spmi)
 			pr_err("Couldn't create bms_status debug file\n");
 	}
 
-	schedule_delayed_work(&chip->monitor_soc_work, 500);
+	queue_delayed_work(system_power_efficient_wq,
+				&chip->monitor_soc_work, 500);
 
 	/*
 	 * schedule a work to check if the userspace vmbms module
@@ -4197,7 +4200,8 @@ static int bms_resume(struct device *dev)
 	}
 	pr_debug("monitor_soc_delay_sec=%d tm_now_sec=%ld chip->tm_sec=%ld\n",
 			monitor_soc_delay / 1000, tm_now_sec, chip->tm_sec);
-	schedule_delayed_work(&chip->monitor_soc_work,
+	queue_delayed_work(system_power_efficient_wq,
+				&chip->monitor_soc_work,
 				msecs_to_jiffies(monitor_soc_delay));
 
 	return 0;
