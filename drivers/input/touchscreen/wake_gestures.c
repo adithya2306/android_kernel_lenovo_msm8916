@@ -57,7 +57,7 @@
 #define SWEEP_X_FINAL           180
 #define SWEEP_Y_NEXT            150
 #define DT2W_FEATHER		150
-#define DT2W_TIME 		500
+#define DT2W_TIME 		600
 
 /* Wake Gestures */
 #define SWEEP_TIMEOUT		300
@@ -150,7 +150,7 @@ static void wake_pwrtrigger(void) {
 
 	schedule_work(&wake_presspwr_work);
 
-        return;
+	return;
 }
 
 
@@ -188,10 +188,13 @@ static void detect_doubletap2wake(int x, int y, bool st)
         pr_info(LOGTAG"x,y(%4d,%4d) tap_time_pre:%llu\n",
                 x, y, tap_time_pre);
 #endif
-	if (x < SWEEP_EDGE || x > sweep_x_limit)
-		return;
-	if (y < SWEEP_EDGE || y > sweep_y_limit)
-		return;
+	// don't check coordinate axes when doubletap2wake is set to full-screen mode
+	if (dt2w_switch < 2) {
+		if (x < SWEEP_EDGE || x > sweep_x_limit)
+			return;
+		if (y < SWEEP_EDGE || y > sweep_y_limit)
+			return;
+	}
 
 	if ((single_touch) && (dt2w_switch) && (exec_count) && (touch_cnt)) {
 		touch_cnt = false;
@@ -641,7 +644,7 @@ static ssize_t doubletap2wake_dump(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
 	sscanf(buf, "%d ", &dt2w_switch_temp);
-	if (dt2w_switch_temp < 0 || dt2w_switch_temp > 1)
+	if (dt2w_switch_temp < 0 || dt2w_switch_temp > 2)
 		dt2w_switch_temp = 0;
 
 	if (!is_suspended())
