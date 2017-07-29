@@ -140,6 +140,10 @@ abort_resume:
 	mutex_unlock(&power_suspend_lock);
 }
 
+#ifdef CONFIG_ADRENO_IDLER
+bool power_suspended = false;
+#endif
+
 void set_power_suspend_state(int new_state)
 {
 	unsigned long irqflags;
@@ -149,12 +153,22 @@ void set_power_suspend_state(int new_state)
 			#ifdef CONFIG_POWERSUSPEND_DEBUG
 			pr_info("[POWERSUSPEND] state activated.\n");
 			#endif
+
+		        #ifdef CONFIG_ADRENO_IDLER
+			power_suspended = true;
+			#endif
+
 			state = new_state;
 			queue_work(suspend_work_queue, &power_suspend_work);
 		} else if (state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
 			#ifdef CONFIG_POWERSUSPEND_DEBUG
 			pr_info("[POWERSUSPEND] state deactivated.\n");
 			#endif
+
+		        #ifdef CONFIG_ADRENO_IDLER
+			power_suspended = false;
+			#endif
+
 			state = new_state;
 			queue_work(suspend_work_queue, &power_resume_work);
 		}
