@@ -314,7 +314,7 @@ TRACE_EVENT(adreno_sp_tp,
 /*
  * Tracepoint for a3xx irq. Includes status info
  */
-TRACE_EVENT(kgsl_a3xx_irq_status,
+/* TRACE_EVENT(kgsl_a3xx_irq_status,
 
 	TP_PROTO(struct adreno_device *adreno_dev, unsigned int status),
 
@@ -367,12 +367,12 @@ TRACE_EVENT(kgsl_a3xx_irq_status,
 			{ 1 << A3XX_INT_UCHE_OOB_ACCESS, "UCHE_OOB_ACCESS" })
 		: "None"
 	)
-);
+); */
 
 /*
  * Tracepoint for a4xx irq. Includes status info
  */
-TRACE_EVENT(kgsl_a4xx_irq_status,
+/* TRACE_EVENT(kgsl_a4xx_irq_status,
 
 	TP_PROTO(struct adreno_device *adreno_dev, unsigned int status),
 
@@ -436,7 +436,7 @@ TRACE_EVENT(kgsl_a4xx_irq_status,
 				"RBBM_DPM_THERMAL_RED_ERR" })
 		: "None"
 	)
-);
+); */
 
 #endif /* _ADRENO_TRACE_H */
 

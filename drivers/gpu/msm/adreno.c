@@ -443,7 +443,7 @@ static irqreturn_t adreno_irq_handler(struct kgsl_device *device)
 		tmp >>= 1;
 	}
 
-	gpudev->irq_trace(adreno_dev, status);
+//	gpudev->irq_trace(adreno_dev, status);
 
 	if (status)
 		adreno_writereg(adreno_dev, ADRENO_REG_RBBM_INT_CLEAR_CMD,
