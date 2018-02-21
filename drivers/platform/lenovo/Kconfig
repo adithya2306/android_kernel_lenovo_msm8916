@@ -1,0 +1,23 @@
+config MACH_LENOVO
+	bool "LENOVO device"
+	depends on ARCH_MSM
+	help
+	  Support for Lenovo products
+
+config MACH_LENOVO_MSM8916
+	bool "LENOVO MSM8916"
+	depends on ARCH_MSM8916
+	select MACH_LENOVO
+	help
+	  Support for MSM8916 Lenovo variants
+
+menu "Lenovo board selection"
+
+config MACH_LENOVO_A6020
+        bool "LENOVO_A6020 board"
+        select MACH_LENOVO_MSM8916
+        help
+          Support for Lenovo Vibe K5/K5 Plus variants
+
+endmenu
+
