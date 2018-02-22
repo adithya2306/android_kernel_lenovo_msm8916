@@ -51,6 +51,8 @@
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>
 
+#include "mdss_dsi.h"
+#include "mdss_mdp.h"
 #include "mdss_fb.h"
 #include "mdss_mdp_splash_logo.h"
 
@@ -112,6 +114,7 @@ static int mdss_fb_send_panel_event(struct msm_fb_data_type *mfd,
 static void mdss_fb_set_mdp_sync_pt_threshold(struct msm_fb_data_type *mfd);
 static void mdss_panelinfo_to_fb_var(struct mdss_panel_info *pinfo,
 					struct fb_var_screeninfo *var);
+extern void sm5414_change_current_backlight_onoff(bool sw,int cur);
 void mdss_fb_no_update_notify_timer_cb(unsigned long data)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)data;
@@ -236,11 +239,25 @@ static int mdss_fb_notify_update(struct msm_fb_data_type *mfd,
 
 static int lcd_backlight_registered;
 
+/* heming@wingtech.com, 20140731, customize the backlight by wingtech defined, begin */
+#define WINGTECH_MDSS_BRIGHT_TO_BL(out, v, bl_min, bl_max, min_bright, max_bright) do {\
+					if(v <= ((int)min_bright*(int)bl_max-(int)bl_min*(int)max_bright)\
+						/((int)bl_max - (int)bl_min)) out = 1; \
+					else \
+					out = (((int)bl_max - (int)bl_min)*v + \
+					((int)max_bright*(int)bl_min - (int)min_bright*(int)bl_max)) \
+					/((int)max_bright - (int)min_bright); \
+					} while (0)
+/* heming@wingtech.com, 20140731, customize the backlight by wingtech defined, end */
+
+
 static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 				      enum led_brightness value)
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(led_cdev->dev->parent);
-	int bl_lvl;
+	int bl_lvl, brightness_min;
+
+	brightness_min = 10;
 
 	if (mfd->boot_notification_led) {
 		led_trigger_event(mfd->boot_notification_led, 0);
@@ -252,9 +269,18 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
 	/* This maps android backlight level 0 to 255 into
 	   driver backlight level 0 to bl_max with rounding */
-	MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
+	/* heming@wingtech.com, 20140731, customize the backlight by wingtech defined, begin */
+	#if 1
+		//defualt setting for MMI, 0 ~ 255, Driver: 8 ~ 255
+		if(mfd->panel_info->bl_min == 1)mfd->panel_info->bl_min = 8;//for the case of set bl_min to 1
+		WINGTECH_MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_min, mfd->panel_info->bl_max, 
+		brightness_min, mfd->panel_info->brightness_max);
+		if(bl_lvl && !value)bl_lvl = 0;
+	#else
+		MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
 				mfd->panel_info->brightness_max);
-
+	 #endif
+	/* heming@wingtech.com, 20140731, customize the backlight by wingtech defined, end */ 
 	if (!bl_lvl && value)
 		bl_lvl = 1;
 
@@ -1170,6 +1196,12 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 	u32 temp = bkl_lvl;
 	bool bl_notify_needed = false;
 
+	//remove this code, the charge current will change by thermal engine, heming@wt
+	//if(bkl_lvl)
+	//	sm5414_change_current_backlight_onoff(1,1000);//hoper
+	//else
+	//	sm5414_change_current_backlight_onoff(0,1500);//hoper
+
 	/* todo: temporary workaround to support doze mode */
 	if ((bkl_lvl == 0) && (mfd->doze_mode)) {
 		pr_debug("keeping backlight on with always-on displays\n");
@@ -1184,6 +1216,12 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 #endif
 		mfd->panel_info->cont_splash_enabled) {
 		mfd->unset_bl_level = bkl_lvl;
+          //+OTHER,mahao.wt,ADD,2015.4.7,Screen timeOut Off in powerOff Charging Mode
+               if(bkl_lvl==0)
+                    {  pdata = dev_get_platdata(&mfd->pdev->dev);
+                        pdata->set_backlight(pdata, bkl_lvl);
+                    }
+        //-OTHER,mahao.wt,ADD,2015.4.7,Screen timeOut Off in powerOff Charging Mode
 		return;
 	} else {
 		mfd->unset_bl_level = 0;
@@ -3432,6 +3470,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 	struct msm_sync_pt_data *sync_pt_data = NULL;
 	unsigned int dsi_mode = 0;
 	struct mdss_panel_data *pdata = NULL;
+	struct LCD_Color_mode Color_mode;
 
 	if (!info || !info->par)
 		return -EINVAL;
@@ -3512,6 +3551,17 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = mdss_fb_lpm_enable(mfd, dsi_mode);
 		break;
 
+	/*+req_LCD wuzhenzhen.wt, add, 2015/09/03,add LCD gamma control code*/
+	case MSMFB_ENHANCE_SET_GAMMA:
+		if (copy_from_user(&Color_mode, argp, sizeof(Color_mode)))
+		{
+			pr_err("%s: MSMFB_ENHANCE_SET_GAMMA ioctl failed\n", __func__);
+			goto exit;
+		}
+		ret = mdss_panel_set_gamma(pdata, Color_mode);
+
+		break;
+	/*-req_LCD wuzhenzhen.wt, add, 2015/09/03,add LCD gamma control code*/
 	default:
 		if (mfd->mdp.ioctl_handler)
 			ret = mfd->mdp.ioctl_handler(mfd, cmd, argp);
