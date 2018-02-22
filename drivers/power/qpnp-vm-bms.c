@@ -1719,6 +1719,11 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 	 * initial OCV.
 	 */
 
+	if(soc != chip->last_soc)
+	{
+		chip->last_soc = soc;
+	}
+
 	backup_ocv_soc(chip, chip->last_ocv_uv, chip->last_soc);
 
 	if (chip->reported_soc_in_use)
@@ -1726,6 +1731,12 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 
 	pr_debug("Reported SOC=%d\n", chip->last_soc);
 
+        pr_debug("%s : ValSOC=%d\n",__func__,chip->last_soc);
+
+	if( chip->last_soc < 0 )
+	{
+		chip->last_soc = soc;
+	}
 	return chip->last_soc;
 }
 
@@ -2070,11 +2081,9 @@ static void monitor_soc_work(struct work_struct *work)
 		/* if battery is not preset report 100% SOC */
 		pr_debug("battery gone, reporting 100\n");
 		chip->last_soc_invalid = true;
-		chip->last_soc = -EINVAL;
 		new_soc = 100;
 	} else {
 		battery_voltage_check(chip);
-
 		if (chip->dt.cfg_use_voltage_soc) {
 			calculate_soc_from_voltage(chip);
 		} else {
@@ -2087,7 +2096,6 @@ static void monitor_soc_work(struct work_struct *work)
 
 			if (chip->last_soc_invalid) {
 				chip->last_soc_invalid = false;
-				chip->last_soc = -EINVAL;
 			}
 			new_soc = lookup_soc_ocv(chip, chip->last_ocv_uv,
 								batt_temp);
@@ -2475,7 +2483,6 @@ static void qpnp_vm_bms_ext_power_changed(struct power_supply *psy)
 
 	pr_debug("Triggered!\n");
 	battery_status_check(chip);
-	battery_insertion_check(chip);
 
 	mutex_lock(&chip->last_soc_mutex);
 	battery_voltage_check(chip);
@@ -3953,20 +3960,21 @@ static int qpnp_vm_bms_probe(struct spmi_device *spmi)
 			pr_err("Couldn't create bms_status debug file\n");
 	}
 
-	schedule_delayed_work(&chip->monitor_soc_work, 0);
+	schedule_delayed_work(&chip->monitor_soc_work, 500);
 
 	/*
 	 * schedule a work to check if the userspace vmbms module
 	 * has registered. Fall-back to voltage-based-soc reporting
 	 * if it has not.
 	 */
+        #if 0
 	schedule_delayed_work(&chip->voltage_soc_timeout_work,
 		msecs_to_jiffies(chip->dt.cfg_voltage_soc_timeout_ms));
+        #endif
 
 	pr_info("probe success: soc=%d vbatt=%d ocv=%d warm_reset=%d\n",
 					get_prop_bms_capacity(chip), vbatt,
 					chip->last_ocv_uv, chip->warm_reset);
-
 	return rc;
 
 fail_get_vtg:

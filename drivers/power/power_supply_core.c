@@ -14,6 +14,7 @@
 #include <linux/types.h>
 #include <linux/init.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/power_supply.h>
@@ -314,6 +315,7 @@ static void power_supply_changed_work(struct work_struct *work)
 		power_supply_update_leds(psy);
 
 		kobject_uevent(&psy->dev->kobj, KOBJ_CHANGE);
+		msleep(100); //james.hong added for improving wake up system speed from QC case 01817960
 		spin_lock_irqsave(&psy->changed_lock, flags);
 	}
 	if (!psy->changed)
