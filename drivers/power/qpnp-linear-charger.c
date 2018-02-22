@@ -37,6 +37,7 @@
 #define OVERTEMP_ON_IRQ				BIT(4)
 #define BAT_TEMP_OK_IRQ                         BIT(1)
 #define BATT_PRES_IRQ                           BIT(0)
+#define USB_CHG_PTH_STS				0x09
 
 /* USB CHARGER PATH peripheral register offsets */
 #define USB_IN_VALID_MASK			BIT(1)
@@ -201,6 +202,7 @@ static enum power_supply_property msm_batt_power_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
 	POWER_SUPPLY_PROP_HEALTH,
 	POWER_SUPPLY_PROP_PRESENT,
+	POWER_SUPPLY_PROP_TECHNOLOGY,
 	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
 	POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
@@ -368,6 +370,7 @@ struct qpnp_lbc_chip {
 	int				delta_vddmax_uv;
 	int				init_trim_uv;
 	struct delayed_work		collapsible_detection_work;
+	int                             chg_voltage;
 
 	/* parallel-chg params */
 	int				parallel_charging_enabled;
@@ -685,8 +688,9 @@ static int qpnp_lbc_charger_enable(struct qpnp_lbc_chip *chip, int reason,
 		goto skip;
 
 	reg_val = !!disabled ? CHG_FORCE_BATT_ON : CHG_ENABLE;
-	rc = qpnp_lbc_masked_write(chip, chip->chgr_base + CHG_CTRL_REG,
-				CHG_EN_MASK, reg_val);
+        rc = qpnp_lbc_masked_write(chip, chip->chgr_base + CHG_CTRL_REG,
+                                CHG_EN_MASK, reg_val);
+
 	if (rc) {
 		pr_err("Failed to %s charger rc=%d\n",
 				reg_val ? "enable" : "disable", rc);
@@ -1254,6 +1258,8 @@ static int get_prop_batt_health(struct qpnp_lbc_chip *chip)
 		return POWER_SUPPLY_HEALTH_COOL;
 	if (chip->bat_is_warm)
 		return POWER_SUPPLY_HEALTH_WARM;
+	if (chip->chg_voltage == POWER_SUPPLY_HEALTH_OVERVOLTAGE)
+		return POWER_SUPPLY_HEALTH_OVERVOLTAGE;
 
 	return POWER_SUPPLY_HEALTH_GOOD;
 }
@@ -1694,6 +1700,9 @@ static int qpnp_batt_power_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
 		val->intval = get_prop_batt_present(chip);
+		break;
+	case POWER_SUPPLY_PROP_TECHNOLOGY:
+		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
 		val->intval = chip->cfg_max_voltage_mv * 1000;
@@ -2459,11 +2468,29 @@ static irqreturn_t qpnp_lbc_chg_gone_irq_handler(int irq, void *_chip)
 static irqreturn_t qpnp_lbc_usbin_valid_irq_handler(int irq, void *_chip)
 {
 	struct qpnp_lbc_chip *chip = _chip;
-	int usb_present;
+	int usb_present,rc;
+        u8 usbin_path_sts;
 	unsigned long flags;
 
 	usb_present = qpnp_lbc_is_usb_chg_plugged_in(chip);
 	pr_debug("usbin-valid triggered: %d\n", usb_present);
+
+        rc = qpnp_lbc_read(chip, chip->usb_chgpth_base + USB_CHG_PTH_STS,&usbin_path_sts, 1);
+	if (rc) {
+	        pr_debug("spmi read failed: addr=0x%x, rc=0x%x\n",
+				        chip->usb_chgpth_base + USB_CHG_PTH_STS, usbin_path_sts);
+	}
+                if(usbin_path_sts == 0x50){
+                        pr_err("jeft USB overvoltage\n");
+			chip->chg_voltage = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
+                        power_supply_set_health_state(chip->usb_psy, POWER_SUPPLY_HEALTH_OVERVOLTAGE);
+                }
+                else if(usbin_path_sts == 0x10){
+                       pr_err("jeft USB undervoltage\n");
+                }
+                else{
+		        chip->chg_voltage = 0;
+                }
 
 	if (chip->usb_present ^ usb_present) {
 		chip->usb_present = usb_present;

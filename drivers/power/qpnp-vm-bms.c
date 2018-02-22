@@ -284,6 +284,7 @@ struct qpnp_bms_chip {
 
 static struct qpnp_bms_chip *the_chip;
 
+
 static struct temp_curr_comp_map temp_curr_comp_lut[] = {
 			{-300, 15},
 			{250, 17},
@@ -1704,6 +1705,7 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 		check_eoc_condition(chip);
 		if ((chip->dt.cfg_soc_resume_limit > 0) && !charging)
 			check_recharge_condition(chip);
+
 	}
 
 	pr_debug("last_soc=%d calculated_soc=%d soc=%d time_since_last_change=%d\n",
@@ -2432,7 +2434,7 @@ static void battery_status_check(struct qpnp_bms_chip *chip)
 	}
 }
 
-#define HIGH_CURRENT_TH 2
+#define HIGH_CURRENT_TH  2
 static void reported_soc_check_status(struct qpnp_bms_chip *chip)
 {
 	u8 present;
@@ -2449,6 +2451,7 @@ static void reported_soc_check_status(struct qpnp_bms_chip *chip)
 		pr_debug("reported_soc in high current mode, return\n");
 		return;
 	}
+
 	if ((chip->reported_soc - chip->last_soc) >
 			(100 - chip->dt.cfg_soc_resume_limit
 						+ HIGH_CURRENT_TH)) {
@@ -3289,19 +3292,19 @@ static int show_bms_config(struct seq_file *m, void *data)
 	get_fifo_length(chip, S2_STATE, &s2_fifo_length);
 
 	seq_printf(m, "r_conn_mohm\t=\t%d\n"
-			"v_cutoff_uv\t=\t%d\n"
-			"max_voltage_uv\t=\t%d\n"
-			"use_voltage_soc\t=\t%d\n"
-			"low_soc_calc_threshold\t=\t%d\n"
-			"low_soc_calculate_soc_ms\t=\t%d\n"
-			"low_voltage_threshold\t=\t%d\n"
-			"low_voltage_calculate_soc_ms\t=\t%d\n"
-			"calculate_soc_ms\t=\t%d\n"
-			"voltage_soc_timeout_ms\t=\t%d\n"
-			"ignore_shutdown_soc\t=\t%d\n"
-			"shutdown_soc_valid_limit\t=\t%d\n"
-			"force_s3_on_suspend\t=\t%d\n"
-			"report_charger_eoc\t=\t%d\n"
+		      "v_cutoff_uv\t=\t%d\n"
+		      "max_voltage_uv\t=\t%d\n"
+		      "use_voltage_soc\t=\t%d\n"
+		      "low_soc_calc_threshold\t=\t%d\n"
+		      "low_soc_calculate_soc_ms\t=\t%d\n"
+		      "low_voltage_threshold\t=\t%d\n"
+		      "low_voltage_calculate_soc_ms\t=\t%d\n"
+		      "calculate_soc_ms\t=\t%d\n"
+		      "voltage_soc_timeout_ms\t=\t%d\n"
+		      "ignore_shutdown_soc\t=\t%d\n"
+		      "shutdown_soc_valid_limit\t=\t%d\n"
+		      "force_s3_on_suspend\t=\t%d\n"
+		      "report_charger_eoc\t=\t%d\n"
 			"aging_compensation\t=\t%d\n"
 			"use_reported_soc\t=\t%d\n"
 			"s1_sample_interval_ms\t=\t%d\n"
@@ -3310,7 +3313,7 @@ static int show_bms_config(struct seq_file *m, void *data)
 			"s2_sample_count\t=\t%d\n"
 			"s1_fifo_length\t=\t%d\n"
 			"s2_fifo_length\t=\t%d\n",
-			chip->dt.cfg_r_conn_mohm,
+            		chip->dt.cfg_r_conn_mohm,
 			chip->dt.cfg_v_cutoff_uv,
 			chip->dt.cfg_max_voltage_uv,
 			chip->dt.cfg_use_voltage_soc,
@@ -3769,7 +3772,8 @@ static int qpnp_vm_bms_probe(struct spmi_device *spmi)
 	struct device_node *revid_dev_node;
 	int rc, vbatt = 0;
 
-	chip = devm_kzalloc(&spmi->dev, sizeof(*chip), GFP_KERNEL);
+
+        chip = devm_kzalloc(&spmi->dev, sizeof(*chip), GFP_KERNEL);
 	if (!chip) {
 		pr_err("kzalloc() failed.\n");
 		return -ENOMEM;
