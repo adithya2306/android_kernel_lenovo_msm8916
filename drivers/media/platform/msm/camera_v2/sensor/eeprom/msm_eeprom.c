@@ -17,6 +17,7 @@
 #include "msm_sd.h"
 #include "msm_cci.h"
 #include "msm_eeprom.h"
+#include "hi545.h"
 
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
@@ -135,22 +136,15 @@ static int msm_eeprom_config(struct msm_eeprom_ctrl_t *e_ctrl,
 	struct msm_eeprom_cfg_data *cdata =
 		(struct msm_eeprom_cfg_data *)argp;
 	int rc = 0;
-	size_t length = 0;
 
 	CDBG("%s E\n", __func__);
 	switch (cdata->cfgtype) {
 	case CFG_EEPROM_GET_INFO:
 		CDBG("%s E CFG_EEPROM_GET_INFO\n", __func__);
 		cdata->is_supported = e_ctrl->is_supported;
-		length = strlen(e_ctrl->eboard_info->eeprom_name) + 1;
-		if (length > MAX_EEPROM_NAME) {
-			pr_err("%s:%d invalid eeprom name length %d\n",
-				__func__, __LINE__, (int)length);
-			rc = -EINVAL;
-			break;
-		}
 		memcpy(cdata->cfg.eeprom_name,
-			e_ctrl->eboard_info->eeprom_name, length);
+			e_ctrl->eboard_info->eeprom_name,
+			sizeof(cdata->cfg.eeprom_name));
 		break;
 	case CFG_EEPROM_GET_CAL_DATA:
 		CDBG("%s E CFG_EEPROM_GET_CAL_DATA\n", __func__);
@@ -265,6 +259,64 @@ static const struct v4l2_subdev_internal_ops msm_eeprom_internal_ops = {
 	.open = msm_eeprom_open,
 	.close = msm_eeprom_close,
 };
+
+static int custom_hynix_define_otp_read(struct msm_eeprom_ctrl_t *e_ctrl,
+		struct msm_eeprom_memory_map_t *emap, uint8_t *memptr) 
+{
+	int m = 0;
+	int k = 0;
+	uint32_t addr = 0;
+	int rc =0;
+
+	//initial  sensor
+	for (; m < sizeof(init_reg_array0) / (sizeof(init_reg_array0[0])); m++) {
+		rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client),
+		init_reg_array0[m].reg_addr, init_reg_array0[m].reg_data, MSM_CAMERA_I2C_WORD_DATA);
+		if (rc < 0) {
+			pr_err("%s: hi545 init  failed\n", __func__);
+			return rc;
+		}
+	}
+
+	// set to otp mode
+	for (; m < sizeof(init_otp_array) / sizeof(init_otp_array[0]); m++) {
+		rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client),
+		init_otp_array[m].reg_addr, init_otp_array[m].reg_data, MSM_CAMERA_I2C_BYTE_DATA);
+		mdelay(init_otp_array[m].delay);
+		if (rc < 0) {
+			pr_err("%s: hi545 to otp mode  failed\n", __func__);
+			return rc;
+		}
+	}
+
+	for (addr = emap->mem.addr; k < (emap->mem.valid_size); addr++, k++) {
+		rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client), 0x10A, (addr>>8)&0xff, MSM_CAMERA_I2C_BYTE_DATA);
+		rc |= e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client), 0x10B, addr & 0xff, MSM_CAMERA_I2C_BYTE_DATA);
+		rc |= e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client), 0x102, 0, MSM_CAMERA_I2C_BYTE_DATA);
+		rc |= e_ctrl->i2c_client.addr_type = MSM_CAMERA_I2C_WORD_DATA;
+		rc |= e_ctrl->i2c_client.i2c_func_tbl->i2c_read_seq(&(e_ctrl->i2c_client), 0x108, memptr, 1);
+		//pr_err("hi545 custom:addr:[0x%04x] value: (0x%x)\n", addr, *memptr);
+		memptr++;  // must
+		if (rc < 0) {
+			pr_err("%s: hi545 read failed\n", __func__);
+			return rc;
+		}
+	}
+
+	//set  to normol mode
+	for (m = 0; m < sizeof(otp_to_norm_mode_array)/sizeof(otp_to_norm_mode_array[0]); m++) {
+		rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_write(&(e_ctrl->i2c_client),
+				otp_to_norm_mode_array[m].reg_addr, otp_to_norm_mode_array[m].reg_data, 1);
+		if (rc < 0) {
+			pr_err("%s: to normal  failed\n", __func__);
+			return rc;
+		}
+	}
+
+	return rc;
+}
+
+
 /**
   * read_eeprom_memory() - read map data into buffer
   * @e_ctrl:	eeprom control struct
@@ -332,16 +384,20 @@ static int read_eeprom_memory(struct msm_eeprom_ctrl_t *e_ctrl,
 			}
 		}
 
-		if (emap[j].mem.valid_size) {
-			e_ctrl->i2c_client.addr_type = emap[j].mem.addr_t;
-			rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_read_seq(
-				&(e_ctrl->i2c_client), emap[j].mem.addr,
-				memptr, emap[j].mem.valid_size);
-			if (rc < 0) {
-				pr_err("%s: read failed\n", __func__);
-				return rc;
+		if (emap[j].mem.valid_size) {//add for hi545
+			if (strcmp(eb_info->eeprom_name, "wingtech_hi545") == 0) {
+				rc = custom_hynix_define_otp_read(e_ctrl, &emap[j], memptr);
+			} else {
+				e_ctrl->i2c_client.addr_type = emap[j].mem.addr_t;
+				rc = e_ctrl->i2c_client.i2c_func_tbl->i2c_read_seq(
+						&(e_ctrl->i2c_client), emap[j].mem.addr,
+						memptr, emap[j].mem.valid_size);
+				if (rc < 0) {
+					pr_err("%s: read failed\n", __func__);
+					return rc;
+				}
+				memptr += emap[j].mem.valid_size;
 			}
-			memptr += emap[j].mem.valid_size;
 		}
 		if (emap[j].pageen.valid_size) {
 			e_ctrl->i2c_client.addr_type = emap[j].pageen.addr_t;
@@ -855,6 +911,12 @@ static int eeprom_config_read_cal_data32(struct msm_eeprom_ctrl_t *e_ctrl,
 	rc = copy_to_user(ptr_dest, e_ctrl->cal_data.mapdata,
 		cdata.cfg.read_data.num_bytes);
 
+	/* should only be called once.  free kernel resource */
+	if (!rc) {
+		kfree(e_ctrl->cal_data.mapdata);
+		kfree(e_ctrl->cal_data.map);
+		memset(&e_ctrl->cal_data, 0, sizeof(e_ctrl->cal_data));
+	}
 	return rc;
 }
 
@@ -863,22 +925,15 @@ static int msm_eeprom_config32(struct msm_eeprom_ctrl_t *e_ctrl,
 {
 	struct msm_eeprom_cfg_data *cdata = (struct msm_eeprom_cfg_data *)argp;
 	int rc = 0;
-	size_t length = 0;
 
 	CDBG("%s E\n", __func__);
 	switch (cdata->cfgtype) {
 	case CFG_EEPROM_GET_INFO:
 		CDBG("%s E CFG_EEPROM_GET_INFO\n", __func__);
 		cdata->is_supported = e_ctrl->is_supported;
-		length = strlen(e_ctrl->eboard_info->eeprom_name) + 1;
-		if (length > MAX_EEPROM_NAME) {
-			pr_err("%s:%d invalid eeprom name length %d\n",
-				__func__, __LINE__, (int)length);
-			rc = -EINVAL;
-			break;
-		}
 		memcpy(cdata->cfg.eeprom_name,
-			e_ctrl->eboard_info->eeprom_name, length);
+			e_ctrl->eboard_info->eeprom_name,
+			sizeof(cdata->cfg.eeprom_name));
 		break;
 	case CFG_EEPROM_GET_CAL_DATA:
 		CDBG("%s E CFG_EEPROM_GET_CAL_DATA\n", __func__);
