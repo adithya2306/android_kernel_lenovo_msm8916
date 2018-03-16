@@ -1,0 +1,46 @@
+/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+
+#include "msm8929.dtsi"
+#include "A6020/msm8939-A6020.dtsi"
+#include "A6020/dsi-panel-hx8394f-boe-720p-video.dtsi"
+#include "A6020/dsi-panel-ili9881c_otm-720p-video.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. MSM8939 QRD SKUK";
+	compatible = "qcom,msm8939-qrd-wt82918", "qcom,msm8939-qrd", "qcom,msm8939", "qcom,qrd";
+	qcom,board-id = <0x1000b 17>, <0x2000b 17>;
+};
+
+&soc {
+	i2c@78b9000 { /* BLSP1 QUP5 */
+		focaltech@38 {
+			focaltech,display-coords = <0 0 720 1280>;
+			focaltech,panel-coords = <0 0 720 1280>;
+		};
+	};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_hx8394f_boe_720p_video>;
+	qcom,dsi-pref-sub-pan = <&dsi_ili9881c_otm_720p_video>;
+};
+
+&dsi_hx8394f_boe_720p_video {
+	qcom,cont-splash-enabled;
+};
+
+&dsi_ili9881c_otm_720p_video {
+	qcom,cont-splash-enabled;
+};
