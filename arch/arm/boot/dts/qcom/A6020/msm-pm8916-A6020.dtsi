@@ -1,0 +1,47 @@
+/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+
+&pm8916_pon {
+	qcom,pon_1 {
+		qcom,support-reset = <0>;
+	        qcom,s2-type = <7>;
+	};
+};
+
+&pm8916_chg {
+       qcom,vddmax-mv = <4350>;
+       qcom,vddsafe-mv = <4350>;
+       qcom,vinmin-mv = <4470>;
+       qcom,ibatsafe-ma = <1440>;
+       qcom,thermal-mitigation = <1440 1150 460 0>;
+       qcom,cool-bat-decidegc = <150>;
+       qcom,warm-bat-decidegc = <450>;
+       qcom,cool-bat-mv = <4350>;
+       qcom,warm-bat-mv = <4350>;
+       qcom,ibatmax-warm-ma = <1150>;
+       qcom,ibatmax-cool-ma = <460>;
+       qcom,batt-hot-percentage = <35>;
+       qcom,batt-cold-percentage = <70>;
+       qcom,tchg-mins = <512>;
+       qcom,resume-soc = <99>;
+       status = "ok";
+       qcom,use-external-charger;
+};
+
+&pm8916_pwm {
+	qcom,force-pwm-size = <9>;
+};
+
+&pm8916_vib {
+       status = "okay";
+};

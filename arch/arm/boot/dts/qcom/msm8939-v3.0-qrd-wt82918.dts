@@ -1,0 +1,47 @@
+/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+
+#include "msm8939-v3.0.dtsi"
+#include "A6020/msm8939-A6020.dtsi"
+#include "A6020/msm8939-v3.0-A6020.dtsi"
+#include "A6020/dsi-panel-otm1901a-tm-1080p-video.dtsi"
+#include "A6020/dsi-panel-boe_nt35596-1080p-video.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. MSM8939v3.0 QRD SKUK";
+	compatible = "qcom,msm8939-qrd-wt82918", "qcom,msm8939-qrd", "qcom,msm8939", "qcom,qrd";
+	qcom,board-id = <0x1000b 16>, <0x2000b 16>;
+};
+
+&soc {
+	i2c@78b9000 { /* BLSP1 QUP5 */
+		focaltech@38 {
+			focaltech,display-coords = <0 0 1080 1920>;
+			focaltech,panel-coords = <0 0 1080 2098>;
+		};
+	};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_otm1901a_tm_1080p_video>;
+	qcom,dsi-pref-sub-pan = <&dsi_boe_nt35595_1080p_video>;
+};
+
+&dsi_otm1901a_tm_1080p_video {
+	qcom,cont-splash-enabled;
+};
+
+&dsi_boe_nt35595_1080p_video {
+	qcom,cont-splash-enabled;
+};
