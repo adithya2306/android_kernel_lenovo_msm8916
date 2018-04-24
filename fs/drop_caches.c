@@ -8,12 +8,13 @@
 #include <linux/writeback.h>
 #include <linux/sysctl.h>
 #include <linux/gfp.h>
+#include <linux/drop_caches.h>
 #include "internal.h"
 
 /* A global variable is a bit ugly, but it keeps the code simple */
 int sysctl_drop_caches;
 
-static void drop_pagecache_sb(struct super_block *sb, void *unused)
+void drop_pagecache_sb(struct super_block *sb, void *unused)
 {
 	struct inode *inode, *toput_inode = NULL;
 
@@ -37,7 +38,13 @@ static void drop_pagecache_sb(struct super_block *sb, void *unused)
 	iput(toput_inode);
 }
 
-static void drop_slab(void)
+void drop_pagecache(void)
+{
+	iterate_supers(drop_pagecache_sb, NULL);
+}
+EXPORT_SYMBOL_GPL(drop_pagecache);
+
+void drop_slab(void)
 {
 	int nr_objects;
 	struct shrink_control shrink = {

@@ -20,6 +20,7 @@
 #include <linux/kthread.h>
 #include <linux/freezer.h>
 #include <linux/module.h>
+#include <linux/drop_caches.h>
 #include "internal.h"
 
 #ifdef CONFIG_COMPACTION
@@ -1146,7 +1147,7 @@ static struct compact_thread {
 	atomic_t should_run;
 } compact_thread;
 
-static uint compact_interval_sec = 1800;
+static uint compact_interval_sec = 2250;
 module_param_named(interval, compact_interval_sec, uint,
 			S_IRUGO | S_IWUSR | S_IWGRP);
 
@@ -1177,7 +1178,10 @@ static int compact_thread_func(void *data)
 		wait_event_freezable(compact_thread.waitqueue,
 				compact_thread_should_run());
 		if (compact_thread_should_run()) {
+			sys_sync();
 			compact_nodes();
+			iterate_supers(drop_pagecache_sb, NULL);
+			drop_slab();
 			atomic_set(&compact_thread.should_run, 0);
 		}
 	}
