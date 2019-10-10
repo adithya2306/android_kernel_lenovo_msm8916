@@ -1122,6 +1122,7 @@ out:
 	if (!err && oom_score_adj >= 700) {
 		if (!strcmp(task_comm, "id.GoogleCamera") ||
 		    !strcmp(task_comm, "ndroid.settings") ||
+		    !strcmp(task_comm, "com.android.camera") ||
             !strcmp(task->comm, "eaurora.snapcam")) {
 			struct task_kill_info *kinfo;
 
