@@ -30,12 +30,7 @@
 
 #include <linux/module.h>
 #include <linux/devfreq.h>
-#include <linux/adreno_idler.h>
-
-#ifdef CONFIG_STATE_NOTIFIER
-#include <linux/state_notifier.h>
-#endif
-
+#include <linux/display_state.h>
 #include <linux/msm_adreno_devfreq.h>
 
 #define ADRENO_IDLER_MAJOR_VERSION 1
@@ -62,16 +57,21 @@ static unsigned int downdifferential = 20;
 module_param_named(adreno_idler_downdifferential, downdifferential, uint, 0664);
 
 /* Master switch to activate the whole routine */
-bool adreno_idler_active = true;
+static bool adreno_idler_active = true;
 module_param_named(adreno_idler_active, adreno_idler_active, bool, 0664);
 
 static unsigned int idlecount = 0;
+
+/* Boolean to let us know if the display is on*/
+static bool display_on;
 
 int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 		 unsigned long *freq)
 {
 	if (!adreno_idler_active)
 		return 0;
+
+	display_on = is_display_on();
 
 	if (stats.busy_time < idleworkload) {
 		/* busy_time >= idleworkload should be considered as a non-idle workload. */
@@ -88,7 +88,7 @@ int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 			idlecount--;
 			return 1;
 		}
-	} else if (state_suspended) {
+	} else if (!display_on) {
 		/* GPU shouldn't be used for much while display is off, so ramp down the frequency */
 		*freq = devfreq->profile->freq_table[devfreq->profile->max_state - 1];
 		return 1;
