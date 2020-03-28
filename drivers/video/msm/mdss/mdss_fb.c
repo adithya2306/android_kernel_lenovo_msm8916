@@ -2726,29 +2726,6 @@ static int mdss_fb_pan_idle(struct msm_fb_data_type *mfd)
 	return 0;
 }
 
-static int mdss_fb_wait_for_kickoff(struct msm_fb_data_type *mfd)
-{
-	int ret = 0;
-
-	if (!mfd->wait_for_kickoff)
-		return mdss_fb_pan_idle(mfd);
-
-	ret = wait_event_timeout(mfd->kickoff_wait_q,
-			(!atomic_read(&mfd->kickoff_pending) ||
-			 mfd->shutdown_pending),
-			msecs_to_jiffies(WAIT_DISP_OP_TIMEOUT / 2));
-	if (!ret) {
-		pr_err("wait for kickoff timeout %d pending=%d\n",
-				ret, atomic_read(&mfd->kickoff_pending));
-
-	} else if (mfd->shutdown_pending) {
-		pr_debug("Shutdown signalled\n");
-		return -EPERM;
-	}
-
-	return 0;
-}
-
 static int mdss_fb_pan_display_ex(struct fb_info *info,
 		struct mdp_display_commit *disp_commit)
 {
