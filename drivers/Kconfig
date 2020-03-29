@@ -188,6 +188,4 @@ source "drivers/soc/Kconfig"
 
 source "drivers/firmware/Kconfig"
 
-source "drivers/android/Kconfig"
-
 endmenu
