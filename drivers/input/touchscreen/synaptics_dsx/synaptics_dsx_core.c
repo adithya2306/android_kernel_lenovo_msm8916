@@ -1508,7 +1508,7 @@ static int synaptics_rmi4_f01_init(struct synaptics_rmi4_data *rmi4_data,
 
 	retval = synaptics_rmi4_set_intr_mask(fhandler, fd, intr_count);
 	if (retval < 0)
-		return -EINVAL;
+		return retval;
 
 	rmi4_data->f01_query_base_addr = fd->query_base_addr;
 	rmi4_data->f01_ctrl_base_addr = fd->ctrl_base_addr;
@@ -1608,7 +1608,7 @@ static int synaptics_rmi4_f11_init(struct synaptics_rmi4_data *rmi4_data,
 
 	retval = synaptics_rmi4_set_intr_mask(fhandler, fd, intr_count);
 	if (retval < 0)
-		return -EINVAL;
+		return retval;
 
 	abs_data_size = query[5] & MASK_2BIT;
 	abs_data_blk_size = 3 + (2 * (abs_data_size == 0 ? 1 : 0));
@@ -1842,10 +1842,8 @@ static int synaptics_rmi4_f12_init(struct synaptics_rmi4_data *rmi4_data,
 			rmi4_data->num_of_tx);
 
 	retval = synaptics_rmi4_set_intr_mask(fhandler, fd, intr_count);
-	if (retval < 0) {
-		retval = -EINVAL;
-		goto free_function_handler_mem;
-	}
+	if (retval < 0)
+		return retval;
 
 	/* Allocate memory for finger data storage space */
 	fhandler->data_size = num_of_fingers * size_of_2d_data;
@@ -2005,7 +2003,7 @@ static int synaptics_rmi4_f1a_init(struct synaptics_rmi4_data *rmi4_data,
 
 	retval = synaptics_rmi4_set_intr_mask(fhandler, fd, intr_count);
 	if (retval < 0)
-		return -EINVAL;
+		return retval;
 
 	retval = synaptics_rmi4_f1a_alloc_mem(rmi4_data, fhandler);
 	if (retval < 0)

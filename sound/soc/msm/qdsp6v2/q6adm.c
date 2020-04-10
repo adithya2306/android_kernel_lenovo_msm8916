@@ -1,5 +1,4 @@
-/* Copyright (c) 2012-2014, 2016-2018 The Linux Foundation. All rights
- * reserved.
+/* Copyright (c) 2012-2014, 2016, 2017, 2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -520,7 +519,7 @@ int adm_set_stereo_to_custom_stereo(int port_id, int copp_idx,
 	adm_params->hdr.dest_svc = APR_SVC_ADM;
 	adm_params->hdr.dest_domain = APR_DOMAIN_ADSP;
 	adm_params->hdr.dest_port = 0; /* Ignored */;
-	adm_params->hdr.token = 0;
+	adm_params->hdr.token = port_idx << 16 | copp_idx;
 	adm_params->hdr.opcode = ADM_CMD_SET_PSPD_MTMX_STRTR_PARAMS_V5;
 	adm_params->payload_addr_lsw = 0;
 	adm_params->payload_addr_msw = 0;
@@ -995,7 +994,7 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 	}
 
 	adm_callback_debug_print(data);
-	if (data->payload_size) {
+	if (data->payload_size >= sizeof(uint32_t)) {
 		copp_idx = (data->token) & 0XFF;
 		port_idx = ((data->token) >> 16) & 0xFF;
 		client_id = ((data->token) >> 8) & 0xFF;
@@ -1017,6 +1016,15 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 		if (data->opcode == APR_BASIC_RSP_RESULT) {
 			pr_debug("%s: APR_BASIC_RSP_RESULT id 0x%x\n",
 				__func__, payload[0]);
+			if (!((client_id != ADM_CLIENT_ID_SOURCE_TRACKING) &&
+			      (payload[0] == ADM_CMD_SET_PP_PARAMS_V5))) {
+				if (data->payload_size <
+						(2 * sizeof(uint32_t))) {
+					pr_err("%s: Invalid payload size %d\n",
+						__func__, data->payload_size);
+					return 0;
+				}
+			}
 			if (payload[1] != 0) {
 				pr_err("%s: cmd = 0x%x returned error = 0x%x\n",
 					__func__, payload[0], payload[1]);
@@ -1133,6 +1141,14 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 			struct adm_cmd_rsp_device_open_v5 *open =
 			(struct adm_cmd_rsp_device_open_v5 *)data->payload;
 
+			if (data->payload_size <
+				sizeof(struct adm_cmd_rsp_device_open_v5)) {
+				pr_err("%s: Invalid payload size %d\n",
+					__func__, data->payload_size);
+				return 0;
+			}
+			open =
+			    (struct adm_cmd_rsp_device_open_v5 *)data->payload;
 			if (open->copp_id == INVALID_COPP_ID) {
 				pr_err("%s: invalid coppid rxed %d\n",
 					__func__, open->copp_id);
@@ -1203,24 +1219,31 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 				pr_err("%s: ADM_CMDRSP_GET_PP_TOPO_MODULE_LIST",
 					 __func__);
 				pr_err(":err = 0x%x\n", payload[0]);
-			} else if (payload[1] >
-				   ((ADM_GET_TOPO_MODULE_LIST_LENGTH /
-				   sizeof(uint32_t)) - 1)) {
-				pr_err("%s: ADM_CMDRSP_GET_PP_TOPO_MODULE_LIST",
-					 __func__);
-				pr_err(":size = %d\n", payload[1]);
-			} else {
-				idx = ADM_GET_TOPO_MODULE_LIST_LENGTH *
-					copp_idx;
-				pr_debug("%s:Num modules payload[1] %d\n",
-					 __func__, payload[1]);
-				adm_module_topo_list[idx] = payload[1];
-				for (i = 1; i <= payload[1]; i++) {
-					adm_module_topo_list[idx+i] =
-						payload[1+i];
-					pr_debug("%s:payload[%d] = %x\n",
-						 __func__, (i+1), payload[1+i]);
+			} else if (data->payload_size >=
+				   (2 * sizeof(uint32_t))) {
+				if (payload[1] >
+					   ((ADM_GET_TOPO_MODULE_LIST_LENGTH /
+					   sizeof(uint32_t)) - 1)) {
+					pr_err("%s: ADM_CMDRSP_GET_PP_TOPO_MODULE_LIST",
+						 __func__);
+					pr_err(":size = %d\n", payload[1]);
+				} else {
+					idx = ADM_GET_TOPO_MODULE_LIST_LENGTH *
+						copp_idx;
+					pr_debug("%s:Num modules payload[1] %d\n",
+						 __func__, payload[1]);
+					adm_module_topo_list[idx] = payload[1];
+					for (i = 1; i <= payload[1]; i++) {
+						adm_module_topo_list[idx+i] =
+							payload[1+i];
+						pr_debug("%s:payload[%d] = %x\n",
+							 __func__, (i+1),
+							 payload[1+i]);
+					}
 				}
+			} else {
+				pr_err("%s: Invalid payload size %d\n",
+				       __func__, data->payload_size);
 			}
 			atomic_set(&this_adm.copp.stat[port_idx][copp_idx], 1);
 			wake_up(&this_adm.copp.wait[port_idx][copp_idx]);
@@ -3358,7 +3381,7 @@ int adm_set_sound_focus(int port_id, int copp_idx,
 
 	soundfocus_params.soundfocus_data.reserved = 0;
 
-	atomic_set(&this_adm.copp.stat[port_idx][copp_idx], 0);
+	atomic_set(&this_adm.copp.stat[port_idx][copp_idx], -1);
 	ret = apr_send_pkt(this_adm.apr, (uint32_t *)&soundfocus_params);
 	if (ret < 0) {
 		pr_err("%s: Set params failed\n", __func__);
@@ -3368,7 +3391,7 @@ int adm_set_sound_focus(int port_id, int copp_idx,
 	}
 	/* Wait for the callback */
 	ret = wait_event_timeout(this_adm.copp.wait[port_idx][copp_idx],
-		atomic_read(&this_adm.copp.stat[port_idx][copp_idx]),
+		atomic_read(&this_adm.copp.stat[port_idx][copp_idx]) >= 0,
 		msecs_to_jiffies(TIMEOUT_MS));
 	if (!ret) {
 		pr_err("%s: Set params timed out\n", __func__);
