@@ -41,8 +41,10 @@
 		qcom,mdss-dsi-color-order = "rgb_swap_rgb";
 		qcom,mdss-dsi-underflow-color = <0xff>;
 		qcom,mdss-dsi-border-color = <0>;
-                qcom,ulps-enabled;
-                qcom,suspend-ulps-enabled;
+		qcom,ulps-enabled;
+		qcom,suspend-ulps-enabled;
+		qcom,mdss-dsi-pan-enable-dynamic-fps;
+		qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
 		qcom,mdss-dsi-on-command = [29 00 00 00 00 00 02 00 00
 				29 01 00 00 00 00 04 FF 19 01 01
 				29 01 00 00 00 00 02 00 80
