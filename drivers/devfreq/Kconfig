@@ -236,7 +236,13 @@ config DEVFREQ_MSM_CPUBW_BOOST_FREQ
 	int "Boost freq for cpubw device"
 	default "0"
 	help
-	  Boost frequency for the MSM DDR bus.
+	  Boost frequency for the MSM CPU DDR bus.
+
+config DEVFREQ_MSM_GPUBW_BOOST_FREQ
+	int "Boost freq for gpubw device"
+	default "0"
+	help
+	  Boost frequency for the MSM GPU DDR bus.
 
 endif
 
