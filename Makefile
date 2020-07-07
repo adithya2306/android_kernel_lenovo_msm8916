@@ -374,6 +374,7 @@ KBUILD_CFLAGS   := -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -Wno-address-of-packed-member \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89
 
