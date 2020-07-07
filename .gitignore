@@ -29,6 +29,7 @@ modules.builtin
 *.bz2
 *.lzma
 *.xz
+*.zip
 *.lzo
 *.patch
 *.gcno
@@ -94,3 +95,6 @@ x509.genkey
 
 # Generated source files
 smd_rpc_sym.c
+
+# build out
+out/
