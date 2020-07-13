@@ -2270,14 +2270,15 @@ static int __qseecom_update_cmd_buf(void *msg, bool cleanup,
 			if (__boundary_checks_offset(req, lstnr_resp, data,
 								qteec, i))
 				goto err;
-			if (cleanup)
+			if (cleanup) {
 				*update = 0;
-			else
+			} else {
 				*update = (uint32_t)sg_dma_address(
 							sg_ptr->sgl);
 				len += (uint32_t)sg->length;
 				if (qteec)
 					*(update + 1) = (uint32_t)sg->length;
+			}
 		} else {
 			struct qseecom_sg_entry *update;
 			int j = 0;

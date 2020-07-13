@@ -2689,9 +2689,9 @@ static ssize_t epl_sensor_show_cal_raw(struct device *dev, struct device_attribu
 
     for(i=0; i<count; i++)
     {
+	msleep(50);
     	switch(epl_sensor.mode)
     	{
-    	    msleep(50);
 #if PS_DYN_K_STR
             case EPL_MODE_ALS_PS:
 #else

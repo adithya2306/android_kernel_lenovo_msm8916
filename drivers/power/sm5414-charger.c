@@ -1091,21 +1091,21 @@ static int get_prop_charge_type(struct sm5414_charger *chip)
 {
 	int rc;
 	u8 reg = 0;
-        int nCHG = 0;
-        
-	 if (!sm5414_get_prop_batt_present(chip))
-		return POWER_SUPPLY_CHARGE_TYPE_NONE;
-	
-	rc = sm5414_read_reg(chip, SM5414_STATUS, &reg);
-	   if (rc) {
-		   dev_err(chip->dev, "Couldn't read STAT_C rc = %d\n", rc);
-		   return POWER_SUPPLY_CHARGE_TYPE_NONE;
-	   }
-	   nCHG = gpio_get_value(chip->chgen_gpio);
-	   dev_dbg(chip->dev, "%s: SM5414_STATUS=0x%x, nCHG = %d\n", __func__, reg, nCHG);	   
+	int nCHG = 0;
 
-       if (!(reg & (SM5414_STATUS_VBUSUVLO_MASK << SM5414_STATUS_VBUSUVLO_SHIFT)) && (nCHG == 0))
-        return POWER_SUPPLY_CHARGE_TYPE_FAST;
+	if (!sm5414_get_prop_batt_present(chip))
+		return POWER_SUPPLY_CHARGE_TYPE_NONE;
+
+	rc = sm5414_read_reg(chip, SM5414_STATUS, &reg);
+	if (rc) {
+		dev_err(chip->dev, "Couldn't read STAT_C rc = %d\n", rc);
+		return POWER_SUPPLY_CHARGE_TYPE_NONE;
+	}
+	nCHG = gpio_get_value(chip->chgen_gpio);
+	dev_dbg(chip->dev, "%s: SM5414_STATUS=0x%x, nCHG = %d\n", __func__, reg, nCHG);
+
+	if (!(reg & (SM5414_STATUS_VBUSUVLO_MASK << SM5414_STATUS_VBUSUVLO_SHIFT)) && (nCHG == 0))
+		return POWER_SUPPLY_CHARGE_TYPE_FAST;
 
 	return POWER_SUPPLY_CHARGE_TYPE_NONE;
 }
@@ -1993,13 +1993,13 @@ static void sm5414_external_power_changed(struct power_supply *psy)
 
     rc = chip->usb_psy->get_property(chip->usb_psy,
                 POWER_SUPPLY_PROP_CURRENT_MAX, &prop);
-    if (rc)
+    if (rc) {
         dev_err(chip->dev,
             "Couldn't read USB current_max property, rc=%d\n", rc);
-    else
+    } else {
         current_limit = prop.intval / 1000;
-
 	chip->psy_usb_ma = current_limit;
+    }
 
     rc = chip->usb_psy->get_property(chip->usb_psy,
                     POWER_SUPPLY_PROP_TYPE, &prop);
@@ -2014,7 +2014,7 @@ static void sm5414_external_power_changed(struct power_supply *psy)
         pr_debug("%s : Don't change vbuslimit current to 100mA\n",__func__);
     }
     else
-    {   
+    {
         if (((type == POWER_SUPPLY_TYPE_USB) || (type == POWER_SUPPLY_TYPE_UNKNOWN))/* && (IsUsbPlugIn == true)*/)
         {        
             sm5414_term_current_set(chip);

@@ -1,7 +1,7 @@
 SECONDS=0
 
 export ARCH=arm64
-export CROSS_COMPILE="$HOME/gcc10/bin/aarch64-elf-"
+export CROSS_COMPILE="$HOME/gcc7/bin/aarch64-cortex_a53-linux-android-"
 
 mkdir -p out
 make O=out A6020_defconfig

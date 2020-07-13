@@ -84,7 +84,7 @@ static const char *state_to_str(u8 state, char *buf, size_t buflen)
 	for (i = 0; i < ARRAY_SIZE(states); i++) {
 		if (!(state & (1 << i)))
 			continue;
-		cnt = snprintf(buf, buflen - cnt - 1, "%s%s%s", buf,
+		cnt = scnprintf(buf, buflen - cnt - 1, "%s%s%s", buf,
 			       buf[0] == '\0' ? "[" : "|",
 			       states[i]);
 	}
@@ -139,7 +139,7 @@ static inline void wcd_clsh_set_int_mode(struct wcd_clsh_cdc_data *clsh_d,
 	    (clsh_state != WCD_CLSH_STATE_LO))
 		return;
 
-	clsh_d->interpolator_modes[ffs(clsh_state)] = mode;
+	clsh_d->interpolator_modes[ffs(clsh_state) - 1] = mode;
 }
 
 static inline void wcd_clsh_set_buck_mode(struct snd_soc_codec *codec,

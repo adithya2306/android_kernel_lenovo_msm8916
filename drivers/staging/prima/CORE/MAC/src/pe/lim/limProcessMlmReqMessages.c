@@ -3970,14 +3970,12 @@ tLimMlmRemoveKeyCnf  mlmRemoveKeyCnf;
       // Prepare and Send LIM_MLM_REMOVEKEY_CNF
       mlmRemoveKeyCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
       mlmRemoveKeyCnf.sessionId = pMlmRemoveKeyReq->sessionId;
-      
 
       goto end;
   }
   else
+  {
     staIdx = pStaDs->staIndex;
-  
-
 
     psessionEntry->limMlmState = eLIM_MLM_WT_REMOVE_STA_KEY_STATE;
     MTRACE(macTrace(pMac, TRACE_CODE_MLM_STATE, psessionEntry->peSessionId, psessionEntry->limMlmState));
@@ -3985,7 +3983,8 @@ tLimMlmRemoveKeyCnf  mlmRemoveKeyCnf;
     // Package WDA_REMOVE_STAKEY_REQ message parameters
     limSendRemoveStaKeyReq( pMac,pMlmRemoveKeyReq,staIdx,psessionEntry);
     return;
- 
+  }
+
 end:
     limPostSmeRemoveKeyCnf( pMac,
       psessionEntry,

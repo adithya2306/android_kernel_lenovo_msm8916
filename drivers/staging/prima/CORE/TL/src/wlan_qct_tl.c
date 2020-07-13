@@ -11835,8 +11835,9 @@ WLAN_TLAPGetNextTxIds
 
   ++ucNextSTA;
 
-  if ( WLAN_MAX_STA_COUNT <= ucNextSTA )
+  if ( WLAN_MAX_STA_COUNT <= ucNextSTA ) {
     ucNextSTA = 0;
+  }
 
     isServed = FALSE;
     if ( 0 == pTLCb->ucCurLeftWeight )
